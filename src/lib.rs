@@ -26,7 +26,7 @@ pub fn new_reader(path: &str) -> DB<File> {
 
 pub fn new_writer(path: &str) -> DB<File> {
     let path = std::path::Path::new(path);
-    std::fs::create_dir(path);
+    std::fs::create_dir_all(path).expect("could not create dir");
 
     let index_file = std::fs::File::create(path.join("index.bin")).unwrap();
     let data_file = std::fs::File::create(path.join("data.bin")).unwrap();

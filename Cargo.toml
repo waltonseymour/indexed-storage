@@ -1,6 +1,8 @@
 [package]
 name = "indexed_storage"
 version = "0.1.0"
+description = "Fast and lightweight indexed binary storage"
+license = "MIT"
 authors = ["Walt Seymour <walton.l.seymour@gmail.com>"]
 edition = "2018"
 
