@@ -4,37 +4,45 @@ use std::io::Seek;
 use std::io::Write;
 
 /// Database for efficiently storing and retrieving arbitrary length byte entries
-pub struct DB {
-    index: File,
-    data: File,
+pub struct DB<T: Write + Read + Seek> {
+    data: T,
+    index: T,
     /// Current offset of data file. Only used during writing
     offset: u64,
 }
 
-impl DB {
-    pub fn new_reader(path: &str) -> DB {
-        let path = std::path::Path::new(path);
+pub fn new_reader(path: &str) -> DB<File> {
+    let path = std::path::Path::new(path);
 
-        let index_file = std::fs::File::open(path.join("index.bin")).unwrap();
-        let data_file = std::fs::File::open(path.join("data.bin")).unwrap();
+    let index_file = std::fs::File::open(path.join("index.bin")).unwrap();
+    let data_file = std::fs::File::open(path.join("data.bin")).unwrap();
 
-        DB {
-            index: index_file,
-            data: data_file,
-            offset: 0,
-        }
+    DB {
+        index: index_file,
+        data: data_file,
+        offset: 0,
     }
+}
 
-    pub fn new_writer(path: &str) -> DB {
-        let path = std::path::Path::new(path);
-        std::fs::create_dir(path).unwrap();
+pub fn new_writer(path: &str) -> DB<File> {
+    let path = std::path::Path::new(path);
+    std::fs::create_dir(path);
 
-        let index_file = std::fs::File::create(path.join("index.bin")).unwrap();
-        let data_file = std::fs::File::create(path.join("data.bin")).unwrap();
+    let index_file = std::fs::File::create(path.join("index.bin")).unwrap();
+    let data_file = std::fs::File::create(path.join("data.bin")).unwrap();
 
+    DB {
+        index: index_file,
+        data: data_file,
+        offset: 0,
+    }
+}
+
+impl<T: Write + Read + Seek> DB<T> {
+    pub fn new(data: T, index: T) -> DB<T> {
         DB {
-            index: index_file,
-            data: data_file,
+            index: index,
+            data: data,
             offset: 0,
         }
     }
@@ -85,12 +93,12 @@ mod tests {
     fn test_write_and_read() {
         let dir = std::env::temp_dir();
         let path = dir.as_path().to_str().unwrap();
-        let mut writer = DB::new_writer(path);
+        let mut writer = new_writer(path);
 
         writer.write_all(&[1, 2, 3]).expect("could not write data");
         writer.write_all(&[4, 5, 6]).expect("could not write data");
 
-        let mut reader = DB::new_reader(path);
+        let mut reader = new_reader(path);
 
         let data = reader.read(0).expect("could not read");
         assert_eq!(data, [1, 2, 3]);
